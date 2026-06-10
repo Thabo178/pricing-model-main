@@ -1,0 +1,34 @@
+{
+  "underliers": [
+    "AMD",
+    "META"
+  ],
+  "spots": [
+    160.0,
+    510.0
+  ],
+  "correlation_matrix": [
+    [
+      1.0,
+      0.5
+    ],
+    [
+      0.5,
+      1.0
+    ]
+  ],
+  "face_value": 1000.0,
+  "issue_date": "2026-06-05",
+  "maturity_date": "2027-06-05",
+  "observation_dates": [
+    "2026-09-05",
+    "2026-12-05",
+    "2027-03-05",
+    "2027-06-05"
+  ],
+  "autocall_barrier": 1.0,
+  "coupon_barrier": 0.75,
+  "knockin_barrier": 0.65,
+  "coupon_rate": 0.12,
+  "risk_free_rate": 0.0375
+}

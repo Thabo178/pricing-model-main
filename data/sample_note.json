@@ -1,0 +1,21 @@
+{
+  "_comment": "Mock term sheet — NVDA single-underlier Phoenix autocallable",
+  "underlier": "NVDA",
+  "spot": 213.73,
+  "face_value": 1000.0,
+  "issue_date": "2026-06-03",
+  "maturity_date": "2027-12-03",
+  "observation_dates": [
+    "2026-09-03",
+    "2026-12-03",
+    "2027-03-03",
+    "2027-06-03",
+    "2027-09-03",
+    "2027-12-03"
+  ],
+  "autocall_barrier": 1.00,
+  "coupon_barrier": 0.75,
+  "knockin_barrier": 0.65,
+  "coupon_rate": 0.12,
+  "risk_free_rate": 0.0375
+}

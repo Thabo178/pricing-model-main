@@ -1,0 +1,116 @@
+{
+  "_comment": "Sample portfolio — replace with Ryan's actual 23-note portfolio. issuer_mark and purchase_price are % of face (100.0 = par). Add/remove notes as needed.",
+  "notes": [
+    {
+      "cusip": "SAMP001",
+      "issuer": "BNP Paribas",
+      "purchase_price": 100.0,
+      "issuer_mark": 97.50,
+      "face_value": 5000.0,
+      "underlier": "NVDA",
+      "spot": 213.73,
+      "issue_date": "2025-09-01",
+      "maturity_date": "2027-09-01",
+      "observation_dates": [
+        "2025-12-01", "2026-03-01", "2026-06-01", "2026-09-01",
+        "2026-12-01", "2027-03-01", "2027-06-01", "2027-09-01"
+      ],
+      "autocall_barrier": 1.00,
+      "coupon_barrier": 0.75,
+      "knockin_barrier": 0.65,
+      "coupon_rate": 0.12,
+      "risk_free_rate": 0.0375,
+      "memory": false
+    },
+    {
+      "cusip": "SAMP002",
+      "issuer": "Credit Agricole",
+      "purchase_price": 100.0,
+      "issuer_mark": 94.20,
+      "face_value": 3000.0,
+      "underliers": ["NOW", "NVDA"],
+      "spots": [820.0, 213.73],
+      "correlation_matrix": [[1.00, 0.60], [0.60, 1.00]],
+      "issue_date": "2025-06-01",
+      "maturity_date": "2027-12-01",
+      "observation_dates": [
+        "2025-09-01", "2025-12-01", "2026-03-01", "2026-06-01",
+        "2026-09-01", "2026-12-01", "2027-03-01", "2027-06-01",
+        "2027-09-01", "2027-12-01"
+      ],
+      "autocall_barrier": 1.00,
+      "coupon_barrier": 0.70,
+      "knockin_barrier": 0.60,
+      "coupon_rate": 0.15,
+      "risk_free_rate": 0.0375,
+      "memory": false
+    },
+    {
+      "cusip": "SAMP003",
+      "issuer": "Nomura",
+      "purchase_price": 100.0,
+      "issuer_mark": 92.10,
+      "face_value": 2000.0,
+      "underlier": "TSLA",
+      "spot": 180.0,
+      "issue_date": "2025-12-01",
+      "maturity_date": "2027-12-01",
+      "observation_dates": [
+        "2026-03-01", "2026-06-01", "2026-09-01", "2026-12-01",
+        "2027-03-01", "2027-06-01", "2027-09-01", "2027-12-01"
+      ],
+      "autocall_barrier": 1.00,
+      "coupon_barrier": 0.75,
+      "knockin_barrier": 0.65,
+      "coupon_rate": 0.14,
+      "risk_free_rate": 0.0375,
+      "memory": true
+    },
+    {
+      "cusip": "SAMP004",
+      "issuer": "Goldman Sachs",
+      "purchase_price": 100.0,
+      "issuer_mark": 96.80,
+      "face_value": 10000.0,
+      "underlier": "SPY",
+      "spot": 525.0,
+      "issue_date": "2025-06-01",
+      "maturity_date": "2027-06-01",
+      "observation_dates": [
+        "2025-12-01", "2026-06-01", "2026-12-01", "2027-06-01"
+      ],
+      "autocall_barrier": 1.00,
+      "coupon_barrier": 0.80,
+      "knockin_barrier": 0.70,
+      "coupon_rate": 0.09,
+      "risk_free_rate": 0.0375,
+      "memory": false
+    },
+    {
+      "cusip": "SAMP005",
+      "issuer": "Morgan Stanley",
+      "purchase_price": 100.0,
+      "issuer_mark": 89.50,
+      "face_value": 5000.0,
+      "underliers": ["TSLA", "AMD", "META"],
+      "spots": [180.0, 160.0, 510.0],
+      "correlation_matrix": [
+        [1.00, 0.65, 0.55],
+        [0.65, 1.00, 0.60],
+        [0.55, 0.60, 1.00]
+      ],
+      "issue_date": "2025-09-01",
+      "maturity_date": "2027-09-01",
+      "observation_dates": [
+        "2025-12-01", "2026-03-01", "2026-06-01", "2026-09-01",
+        "2026-12-01", "2027-03-01", "2027-06-01", "2027-09-01"
+      ],
+      "autocall_barrier": 1.00,
+      "coupon_barrier": 0.70,
+      "knockin_barrier": 0.60,
+      "coupon_rate": 0.18,
+      "risk_free_rate": 0.0375,
+      "memory": false
+    }
+  ]
+}

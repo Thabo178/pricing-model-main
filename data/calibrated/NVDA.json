@@ -1,0 +1,15 @@
+{
+  "underlier": "NVDA",
+  "v0": 0.182126,
+  "kappa": 2.022143,
+  "theta": 0.259041,
+  "sigma": 0.275381,
+  "rho": -0.485359,
+  "rmse": 0.018937,
+  "converged": true,
+  "n_points": 140,
+  "feller_satisfied": true,
+  "spot_used": 205.46,
+  "used_fallback_spot": false,
+  "calibration_mode": "live_orats"
+}
