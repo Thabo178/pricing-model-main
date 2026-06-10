@@ -18,7 +18,7 @@ Ryan runs the tool via the Streamlit dashboard (double-click `start.command` on 
 
 GitHub repo: https://github.com/Thabo178/pricing-model
 Collaborative editing between the developer (Mac) and Ryan (Windows).
-Ryan can fork the repo and clone it to his Windows PC.
+
 
 ---
 
