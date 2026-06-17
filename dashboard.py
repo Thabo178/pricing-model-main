@@ -1198,7 +1198,7 @@ with tab_wo:
                 key="wo_freq",
             )
 
-            _label("Barriers & coupon")
+            _label("Barrier Structure")
             default_autocall = 100.0 * float(loaded_note.get("autocall_barrier", 1.00)) if loaded_note else 100.0
             default_coupon_barrier = 100.0 * float(loaded_note.get("coupon_barrier", 0.75)) if loaded_note else 75.0
             default_knockin = 100.0 * float(loaded_note.get("knockin_barrier", 0.65)) if loaded_note else 65.0
@@ -1206,13 +1206,46 @@ with tab_wo:
             default_rfr = 100.0 * float(loaded_note.get("risk_free_rate", 0.0375)) if loaded_note else 3.75
             default_face = float(loaded_note.get("face_value", 1000.0)) if loaded_note else 1000.0
 
+            autocall_pct = st.slider(
+                "Autocall Barrier", 80, 115, int(default_autocall), step=5, format="%d%%", key="wo_autocall"
+            )
+            coupon_pct = st.slider(
+                "Coupon Barrier", 50, 95, int(default_coupon_barrier), step=5, format="%d%%", key="wo_coupon"
+            )
+            knockin_pct = st.slider(
+                "Knock-In Barrier", 40, 80, int(default_knockin), step=5, format="%d%%", key="wo_knockin"
+            )
 
-            value=default_autocall
-            value=default_coupon_barrier
-            value=default_knockin
-            value=default_coupon
-            value=default_rfr
-            value=default_face
+            st.markdown("<hr>", unsafe_allow_html=True)
+            _label("Rates")
+
+            wr1, wr2 = st.columns(2)
+            with wr1:
+                coupon_rate = st.number_input(
+                    "Annual Coupon (%)",
+                    min_value=0.0,
+                    max_value=50.0,
+                    value=default_coupon,
+                    step=0.5,
+                    key="wo_cpn",
+                )
+            with wr2:
+                rfr = st.number_input(
+                    "Risk-Free Rate (%)",
+                    min_value=0.0,
+                    max_value=20.0,
+                    value=default_rfr,
+                    step=0.25,
+                    key="wo_rfr",
+                )
+
+            face_value = st.number_input(
+                "Face Value ($)",
+                min_value=100.0,
+                value=default_face,
+                step=100.0,
+                key="wo_face",
+            )
 
     # -----------------------------
     # Right: correlation + pricing
