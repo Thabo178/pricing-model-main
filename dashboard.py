@@ -11,6 +11,7 @@ import numpy as np
 from datetime import date
 from pathlib import Path
 from pricer import price_worst_of, price_note_dict
+from pricer.orats import build_calibration_set, live_spot, live_dividend_yield
 import pandas as pd
 import streamlit as st
 
@@ -436,6 +437,114 @@ def _build_corr_matrix(pairs: dict, n: int) -> np.ndarray:
         mat[j, i] = rho
     return mat
 
+import json
+
+
+def _validate_barrier_order(knockin_pct: float, coupon_pct: float, autocall_pct: float) -> list[str]:
+    errors = []
+    if knockin_pct > coupon_pct:
+        errors.append("Knock-in barrier cannot be above coupon barrier.")
+    if coupon_pct > autocall_pct:
+        errors.append("Coupon barrier cannot be above autocall barrier.")
+    return errors
+
+
+def _validate_corr_matrix(corr_matrix: list[list[float]], tol: float = 1e-9) -> list[str]:
+    errors = []
+    n = len(corr_matrix)
+    if n == 0:
+        return ["Correlation matrix is empty."]
+    for row in corr_matrix:
+        if len(row) != n:
+            return ["Correlation matrix must be square."]
+    for i in range(n):
+        if abs(corr_matrix[i][i] - 1.0) > tol:
+            errors.append(f"Correlation diagonal entry ({i+1},{i+1}) must equal 1.00.")
+        for j in range(i + 1, n):
+            a = corr_matrix[i][j]
+            b = corr_matrix[j][i]
+            if abs(a - b) > tol:
+                errors.append(f"Correlation matrix must be symmetric: ({i+1},{j+1}) != ({j+1},{i+1}).")
+            if not (-0.99 <= a <= 0.99):
+                errors.append(f"Correlation {i+1}-{j+1} must be between -0.99 and 0.99.")
+    return errors
+
+
+def _validate_single_note_inputs(note: dict) -> list[str]:
+    errors = []
+    if note["spot"] <= 0:
+        errors.append("Spot must be positive.")
+    if note["face_value"] <= 0:
+        errors.append("Face value must be positive.")
+    if note["coupon_rate"] < 0:
+        errors.append("Coupon rate cannot be negative.")
+    if note["risk_free_rate"] < 0:
+        errors.append("Risk-free rate cannot be negative.")
+    errors.extend(
+        _validate_barrier_order(
+            note["knockin_barrier"] * 100,
+            note["coupon_barrier"] * 100,
+            note["autocall_barrier"] * 100,
+        )
+    )
+    if not note.get("observation_dates"):
+        errors.append("No observation dates were generated; maturity must be after issue date.")
+    return errors
+
+
+def _validate_worstof_note_inputs(note: dict) -> list[str]:
+    errors = []
+    tickers = note.get("underliers", [])
+    spots = note.get("spots", [])
+    corr = note.get("correlation_matrix", [])
+
+    if len(tickers) not in (2, 3):
+        errors.append("Worst-of note must have exactly 2 or 3 underliers.")
+    if len(set(tickers)) != len(tickers):
+        errors.append("Worst-of basket underliers must be unique.")
+    if len(spots) != len(tickers):
+        errors.append("Number of spots must match number of underliers.")
+    if any(s <= 0 for s in spots):
+        errors.append("All spots must be positive.")
+    if note["face_value"] <= 0:
+        errors.append("Face value must be positive.")
+    if note["coupon_rate"] < 0:
+        errors.append("Coupon rate cannot be negative.")
+    if note["risk_free_rate"] < 0:
+        errors.append("Risk-free rate cannot be negative.")
+    errors.extend(
+        _validate_barrier_order(
+            note["knockin_barrier"] * 100,
+            note["coupon_barrier"] * 100,
+            note["autocall_barrier"] * 100,
+        )
+    )
+    errors.extend(_validate_corr_matrix(corr))
+    if not note.get("observation_dates"):
+        errors.append("No observation dates were generated; maturity must be after issue date.")
+    return errors
+
+
+def _warn_if_using_default_spot(ticker: str, spot: float) -> str | None:
+    ref = DEFAULT_SPOTS.get(ticker)
+    if ref is None:
+        return None
+    if abs(spot - ref) < 1e-12:
+        return f"Using dashboard default spot for {ticker} ({spot:.2f}). Replace with live spot if needed."
+    return None
+
+
+def _workflow_quote_summary(note: dict, result: dict, structure_label: str) -> str:
+    fv_pct = result.get("npv_pct", float("nan"))
+    fv_dollar = result.get("npv_dollar", float("nan"))
+    se_bps = result.get("se_bps", float("nan"))
+    face = note.get("face_value", 1000.0)
+    discount_to_par = 100.0 - fv_pct
+    return (
+        f"{structure_label}: FV {fv_pct:.2f}% ({fv_dollar:,.2f} per {face:,.0f}), "
+        f"discount to par {discount_to_par:.2f} pts, MC std err {se_bps:.1f} bps."
+    )
+
 def _recommendation_badge(rec: str) -> str:
     colour = {"Buy": "#16a34a", "Skip": "#dc2626", "Gray Zone": "#d97706"}.get(
         rec, "#64748b"
@@ -618,23 +727,31 @@ with tab_price:
                 credit_spread_bps=credit_spread_bps,
             )
             note_dict["memory"] = memory_on
-            if not note_dict["observation_dates"]:
-                st.error(
-                    "No observation dates — check that Maturity Date is after Issue Date."
-                )
+
+            errors = _validate_single_note_inputs(note_dict)
+            spot_warning = _warn_if_using_default_spot(underlier, spot)
+
+            if errors:
+                for msg in errors:
+                    st.error(msg)
+
             else:
-                with st.spinner(f"Pricing {underlier} · {n_paths:,} paths …"):
+                if spot_warning:
+                    st.warning(spot_warning, icon="⚠️")
+                with st.spinner(f"Pricing {underlier} · {n_paths:,} paths"):
                     try:
                         from pricer.pricer import price_note_dict
-
-                        result = price_note_dict(
-                            note_dict, n_paths=n_paths, memory=memory_on
+                        result = price_note_dict(note_dict, n_paths=n_paths, memory=memory_on)
+                        st.session_state.last_result = result
+                        st.session_state.last_note = note_dict
+                        st.session_state.last_quote_summary = _workflow_quote_summary(
+                            note_dict, result, underlier
                         )
-                        st.session_state["last_result"] = result
-                        st.session_state["last_note"] = note_dict
                     except Exception as e:
                         st.error(f"Pricing failed: {e}")
                         st.session_state.pop("last_result", None)
+                        st.session_state.pop("last_note", None)
+                        st.session_state.pop("last_quote_summary", None)
 
         if "last_result" in st.session_state:
             r = st.session_state["last_result"]
@@ -872,13 +989,16 @@ with tab_cal:
                             spot = cal_spot
                             used_fallback_spot = True
 
-                        cal_set = build_calibration_set(cal_ticker, today, spot, r=rfr)
+                        q = live_dividend_yield(cal_ticker)
+                        cal_set = build_calibration_set(cal_ticker, today, spot, r=rfr, q=q)
                         if not cal_set:
                             st.error(f"No ORATS data for {cal_ticker}.")
                         else:
+
                             result = calibrate_heston_orats(
-                                cal_ticker, today, spot, rfr, cal_set
+                                cal_ticker, today, spot, rfr, cal_set, q=q
                             )
+                            result["dividend_yield"] = float(q)
                             result["spot_used"] = float(spot)
                             result["used_fallback_spot"] = used_fallback_spot
                             result["calibration_mode"] = "live_orats"

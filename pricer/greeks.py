@@ -61,6 +61,24 @@ def _price(note_dict, n_paths, seed, heston_override=None):
                            _heston_params=heston_override)['npv_pct'] / 100.0
 
 
+def _bumped_note(note: dict, spot_new: float) -> dict:
+    """Return note with new spot but barriers held at original dollar levels.
+
+    Barriers are stored as fractions of spot. When spot moves, we scale the
+    fractions inversely so the dollar barrier levels stay fixed — this is the
+    correct delta calculation for a note already issued (fixed barriers).
+    """
+    s0 = note['spot']
+    ratio = s0 / spot_new
+    return {
+        **note,
+        'spot':              spot_new,
+        'autocall_barrier':  note['autocall_barrier'] * ratio,
+        'coupon_barrier':    note['coupon_barrier']   * ratio,
+        'knockin_barrier':   note['knockin_barrier']  * ratio,
+    }
+
+
 def _greeks_single(note: dict, n_paths: int, seed: int) -> dict:
     face  = note['face_value']
     spot  = note['spot']
@@ -68,9 +86,9 @@ def _greeks_single(note: dict, n_paths: int, seed: int) -> dict:
 
     mid   = _price(note, n_paths, seed)
 
-    # — Delta & Gamma (spot bumps) —
-    note_up = {**note, 'spot': spot + h_abs}
-    note_dn = {**note, 'spot': spot - h_abs}
+    # — Delta & Gamma (spot bumps, barriers held fixed in dollar terms) —
+    note_up = _bumped_note(note, spot + h_abs)
+    note_dn = _bumped_note(note, spot - h_abs)
     npv_up  = _price(note_up, n_paths, seed)
     npv_dn  = _price(note_dn, n_paths, seed)
 
@@ -140,8 +158,9 @@ def _greeks_worst_of(note: dict, n_paths: int, seed: int) -> dict:
         npv_up = _price_wo({**note, 'spots': spots_up}, n_paths, seed)
         npv_dn = _price_wo({**note, 'spots': spots_dn}, n_paths, seed)
 
+        d_frac = (npv_up - npv_dn) / (2 * h_abs)
         deltas_pct.append(round((npv_up - npv_dn) / 2 * 100, 3))
-        deltas_dollar.append(round((npv_up - npv_dn) / (2 * h_abs) * face, 4))
+        deltas_dollar.append(round(d_frac * face, 4))
         gammas_dollar.append(round((npv_up - 2 * mid + npv_dn) / h_abs**2 * face, 6))
 
     # Aggregate vega across underliers
